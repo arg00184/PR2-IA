@@ -115,13 +115,87 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
     util.raiseNotDefined()
 
 
+def exploracion(problem: SearchProblem) -> List[Directions]:
+    """
+    Recorre el mayor número posible de celdas alcanzables y, al terminar,
+    garantiza llegar al objetivo si existe un camino.
+
+    Estrategia:
+      1) DFS iterativo para visitar todo el espacio alcanzable.
+      2) Backtracking explícito para reconstruir una secuencia ejecutable
+         de acciones (Pacman realmente recorre el laberinto).
+      3) Desde la posición final, calcula un camino mínimo al objetivo con BFS.
+    """
+
+    start = problem.getStartState()
+
+    # Caso trivial
+    if problem.isGoalState(start):
+        return []
+
+    visited = set([start])
+    traversal_actions = []
+
+    # Pila de DFS: (estado_actual, sucesores_por_visitar)
+    stack = [(start, list(problem.getSuccessors(start)))]
+
+    while stack:
+        current, successors = stack[-1]
+
+        # Buscar un sucesor aún no visitado
+        next_candidate = None
+        while successors:
+            succ_state, succ_action, _ = successors.pop(0)
+            if succ_state not in visited:
+                next_candidate = (succ_state, succ_action)
+                break
+
+        if next_candidate is not None:
+            succ_state, succ_action = next_candidate
+            visited.add(succ_state)
+            traversal_actions.append(succ_action)
+            stack.append((succ_state, list(problem.getSuccessors(succ_state))))
+            continue
+
+        # Sin nuevos sucesores: backtrack al padre (si existe)
+        stack.pop()
+        if stack:
+            parent_state = stack[-1][0]
+            reverse_action = None
+            for s, a, _ in problem.getSuccessors(current):
+                if s == parent_state:
+                    reverse_action = a
+                    break
+            if reverse_action is not None:
+                traversal_actions.append(reverse_action)
+
+    # Ruta mínima desde la posición final del recorrido hasta el objetivo
+    frontier = util.Queue()
+    frontier.push((start, []))
+    seen = set([start])
+
+    path_to_goal = []
+    while not frontier.isEmpty():
+        state, path = frontier.pop()
+        if problem.isGoalState(state):
+            path_to_goal = path
+            break
+
+        for succ_state, action, _ in problem.getSuccessors(state):
+            if succ_state not in seen:
+                seen.add(succ_state)
+                frontier.push((succ_state, path + [action]))
+
+    return traversal_actions + path_to_goal
+
+
 def exploration(problem):
-     # Stack for DFS traversal
-    util.raiseNotDefined()
+    "Compatibilidad con posibles referencias previas en inglés." 
+    return exploracion(problem)
 
 # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
 astar = aStarSearch
 ucs = uniformCostSearch
-exp = exploration
+exp = exploracion

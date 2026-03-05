@@ -262,11 +262,13 @@ class MiAgente_DFS(SearchAgent):
     def __init__(self):
         self.searchFunction = search.depthFirstSearch
         self.searchType = lambda state: PositionSearchProblem(state)
-        
-        
-        
-        
-        
+
+
+class MiAgente_Explorador(SearchAgent):
+    def __init__(self):
+        self.searchFunction = search.exploracion
+        self.searchType = lambda state: PositionSearchProblem(state)
+
 
 def manhattanHeuristic(position, problem, info={}):
     "The Manhattan distance heuristic for a PositionSearchProblem"
