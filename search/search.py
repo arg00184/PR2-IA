@@ -117,35 +117,37 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
 
 def exploracion(problem: SearchProblem) -> List[Directions]:
     """
-    Recorre el mayor número posible de celdas alcanzables y, al terminar,
-    garantiza llegar al objetivo si existe un camino.
+    Recorre el mayor número posible de celdas alcanzables evitando pisar
+    el objetivo durante la fase de exploración para no terminar la partida
+    prematuramente.
 
     Estrategia:
-      1) DFS iterativo para visitar todo el espacio alcanzable.
-      2) Backtracking explícito para reconstruir una secuencia ejecutable
-         de acciones (Pacman realmente recorre el laberinto).
-      3) Desde la posición final, calcula un camino mínimo al objetivo con BFS.
+      1) DFS iterativo para explorar celdas alcanzables NO objetivo.
+      2) Backtracking explícito para reconstruir una secuencia ejecutable.
+      3) Al terminar, BFS desde la posición actual hasta el objetivo.
     """
 
     start = problem.getStartState()
 
-    # Caso trivial
     if problem.isGoalState(start):
         return []
 
-    visited = set([start])
+    visited = {start}
     traversal_actions = []
+    current_position = start
 
-    # Pila de DFS: (estado_actual, sucesores_por_visitar)
-    stack = [(start, list(problem.getSuccessors(start)))]
+    # Pila DFS: [estado, sucesores_restantes]
+    stack = [[start, list(problem.getSuccessors(start))]]
 
     while stack:
         current, successors = stack[-1]
 
-        # Buscar un sucesor aún no visitado
         next_candidate = None
         while successors:
             succ_state, succ_action, _ = successors.pop(0)
+            # No pisar el objetivo durante exploración para evitar fin prematuro.
+            if problem.isGoalState(succ_state):
+                continue
             if succ_state not in visited:
                 next_candidate = (succ_state, succ_action)
                 break
@@ -154,10 +156,11 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
             succ_state, succ_action = next_candidate
             visited.add(succ_state)
             traversal_actions.append(succ_action)
-            stack.append((succ_state, list(problem.getSuccessors(succ_state))))
+            current_position = succ_state
+            stack.append([succ_state, list(problem.getSuccessors(succ_state))])
             continue
 
-        # Sin nuevos sucesores: backtrack al padre (si existe)
+        # Sin nuevos sucesores válidos: backtrack al padre.
         stack.pop()
         if stack:
             parent_state = stack[-1][0]
@@ -168,11 +171,12 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
                     break
             if reverse_action is not None:
                 traversal_actions.append(reverse_action)
+                current_position = parent_state
 
-    # Ruta mínima desde la posición final del recorrido hasta el objetivo
+    # Al terminar la exploración, ir al objetivo desde posición actual.
     frontier = util.Queue()
-    frontier.push((start, []))
-    seen = set([start])
+    frontier.push((current_position, []))
+    seen = {current_position}
 
     path_to_goal = []
     while not frontier.isEmpty():
