@@ -194,8 +194,8 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
 
 
 def exploration(problem):
-    "Compatibilidad con posibles referencias previas en inglés." 
-    return exploracion(problem)
+    # Stack for DFS traversal
+    util.raiseNotDefined()
 
 # Abbreviations
 bfs = breadthFirstSearch
