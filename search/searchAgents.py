@@ -120,6 +120,11 @@ class SearchAgent(Agent):
         totalCost = problem.getCostOfActions(self.actions)
         print('Path found with total cost of %d in %.1f seconds' % (totalCost, time.time() - starttime))
         if '_expanded' in dir(problem): print('Search nodes expanded: %d' % problem._expanded)
+        if hasattr(problem, 'explorationStats'):
+            stats = problem.explorationStats
+            print('Exploration steps: %d' % stats.get('steps', len(self.actions)))
+            print('Unique visited cells: %d' % stats.get('unique_cells', 0))
+            print('Repetition ratio (steps/unique): %.3f' % stats.get('repetition_ratio', 0.0))
 
     def getAction(self, state):
         """

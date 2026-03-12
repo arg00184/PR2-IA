@@ -125,11 +125,19 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
       1) DFS iterativo para explorar celdas alcanzables NO objetivo.
       2) Backtracking explícito para reconstruir una secuencia ejecutable.
       3) Al terminar, BFS desde la posición actual hasta el objetivo.
+
+    Además deja estadísticas en problem.explorationStats para facilitar
+    el análisis de desempeño solicitado en la práctica.
     """
 
     start = problem.getStartState()
 
     if problem.isGoalState(start):
+        problem.explorationStats = {
+            'steps': 0,
+            'unique_cells': 1,
+            'repetition_ratio': 0.0,
+        }
         return []
 
     visited = {start}
@@ -190,12 +198,37 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
                 seen.add(succ_state)
                 frontier.push((succ_state, path + [action]))
 
-    return traversal_actions + path_to_goal
+    actions = traversal_actions + path_to_goal
+
+    # Reconstruye estados recorridos para medir celdas únicas visitadas.
+    state_cursor = start
+    unique_path_cells = {start}
+    for action in actions:
+        next_state = None
+        for succ_state, succ_action, _ in problem.getSuccessors(state_cursor):
+            if succ_action == action:
+                next_state = succ_state
+                break
+        if next_state is None:
+            break
+        unique_path_cells.add(next_state)
+        state_cursor = next_state
+
+    steps = len(actions)
+    unique_cells = len(unique_path_cells)
+    repetition_ratio = (float(steps) / unique_cells) if unique_cells > 0 else 0.0
+    problem.explorationStats = {
+        'steps': steps,
+        'unique_cells': unique_cells,
+        'repetition_ratio': repetition_ratio,
+    }
+
+    return actions
 
 
 def exploration(problem):
-    # Stack for DFS traversal
-    util.raiseNotDefined()
+    "Compatibilidad con posibles referencias previas en inglés." 
+    return exploracion(problem)
 
 # Abbreviations
 bfs = breadthFirstSearch
