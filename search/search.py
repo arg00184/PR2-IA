@@ -115,13 +115,124 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
     util.raiseNotDefined()
 
 
+def exploracion(problem: SearchProblem) -> List[Directions]:
+    """
+    Recorre el mayor número posible de celdas alcanzables evitando pisar
+    el objetivo durante la fase de exploración para no terminar la partida
+    prematuramente.
+
+    Estrategia:
+      1) DFS iterativo para explorar celdas alcanzables NO objetivo.
+      2) Backtracking explícito para reconstruir una secuencia ejecutable.
+      3) Al terminar, BFS desde la posición actual hasta el objetivo.
+
+    Además deja estadísticas en problem.explorationStats para facilitar
+    el análisis de desempeño solicitado en la práctica.
+    """
+
+    start = problem.getStartState()
+
+    if problem.isGoalState(start):
+        problem.explorationStats = {
+            'steps': 0,
+            'unique_cells': 1,
+            'repetition_ratio': 0.0,
+        }
+        return []
+
+    visited = {start}
+    traversal_actions = []
+    current_position = start
+
+    # Pila DFS: [estado, sucesores_restantes]
+    stack = [[start, list(problem.getSuccessors(start))]]
+
+    while stack:
+        current, successors = stack[-1]
+
+        next_candidate = None
+        while successors:
+            succ_state, succ_action, _ = successors.pop(0)
+            # No pisar el objetivo durante exploración para evitar fin prematuro.
+            if problem.isGoalState(succ_state):
+                continue
+            if succ_state not in visited:
+                next_candidate = (succ_state, succ_action)
+                break
+
+        if next_candidate is not None:
+            succ_state, succ_action = next_candidate
+            visited.add(succ_state)
+            traversal_actions.append(succ_action)
+            current_position = succ_state
+            stack.append([succ_state, list(problem.getSuccessors(succ_state))])
+            continue
+
+        # Sin nuevos sucesores válidos: backtrack al padre.
+        stack.pop()
+        if stack:
+            parent_state = stack[-1][0]
+            reverse_action = None
+            for s, a, _ in problem.getSuccessors(current):
+                if s == parent_state:
+                    reverse_action = a
+                    break
+            if reverse_action is not None:
+                traversal_actions.append(reverse_action)
+                current_position = parent_state
+
+    # Al terminar la exploración, ir al objetivo desde posición actual.
+    frontier = util.Queue()
+    frontier.push((current_position, []))
+    seen = {current_position}
+
+    path_to_goal = []
+    while not frontier.isEmpty():
+        state, path = frontier.pop()
+        if problem.isGoalState(state):
+            path_to_goal = path
+            break
+
+        for succ_state, action, _ in problem.getSuccessors(state):
+            if succ_state not in seen:
+                seen.add(succ_state)
+                frontier.push((succ_state, path + [action]))
+
+    actions = traversal_actions + path_to_goal
+
+    # Reconstruye estados recorridos para medir celdas únicas visitadas.
+    state_cursor = start
+    unique_path_cells = {start}
+    for action in actions:
+        next_state = None
+        for succ_state, succ_action, _ in problem.getSuccessors(state_cursor):
+            if succ_action == action:
+                next_state = succ_state
+                break
+        if next_state is None:
+            break
+        unique_path_cells.add(next_state)
+        state_cursor = next_state
+
+    steps = len(actions)
+    unique_cells = len(unique_path_cells)
+    repetition_ratio = (float(steps) / unique_cells) if unique_cells > 0 else 0.0
+    problem.explorationStats = {
+        'steps': steps,
+        'unique_cells': unique_cells,
+        'repetition_ratio': repetition_ratio,
+    }
+
+    return actions
+
+
 def exploration(problem):
-     # Stack for DFS traversal
-    util.raiseNotDefined()
+    "Compatibilidad con posibles referencias previas en inglés." 
+    return exploracion(problem)
 
 # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
 astar = aStarSearch
 ucs = uniformCostSearch
-exp = exploration
+exp = exploracion
