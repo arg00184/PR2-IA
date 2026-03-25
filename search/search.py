@@ -1,4 +1,4 @@
-# search.py
+﻿# search.py
 # ---------
 # Licensing Information:  You are free to use or extend these projects for
 # educational purposes provided that (1) you do not distribute or publish
@@ -89,8 +89,30 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    start = problem.getStartState()
+    if problem.isGoalState(start):
+        return []
+
+    frontier = util.Stack()
+    frontier.push((start, []))
+    visited = set()
+
+    while not frontier.isEmpty():
+        state, path = frontier.pop()
+
+        if state in visited:
+            continue
+
+        visited.add(state)
+
+        if problem.isGoalState(state):
+            return path
+
+        for successor, action, _ in reversed(problem.getSuccessors(state)):
+            if successor not in visited:
+                frontier.push((successor, path + [action]))
+
+    return []
 
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
@@ -117,17 +139,17 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
 
 def exploracion(problem: SearchProblem) -> List[Directions]:
     """
-    Recorre el mayor número posible de celdas alcanzables evitando pisar
-    el objetivo durante la fase de exploración para no terminar la partida
+    Recorre el mayor nÃºmero posible de celdas alcanzables evitando pisar
+    el objetivo durante la fase de exploraciÃ³n para no terminar la partida
     prematuramente.
 
     Estrategia:
       1) DFS iterativo para explorar celdas alcanzables NO objetivo.
-      2) Backtracking explícito para reconstruir una secuencia ejecutable.
-      3) Al terminar, BFS desde la posición actual hasta el objetivo.
+      2) Backtracking explÃ­cito para reconstruir una secuencia ejecutable.
+      3) Al terminar, BFS desde la posiciÃ³n actual hasta el objetivo.
 
-    Además deja estadísticas en problem.explorationStats para facilitar
-    el análisis de desempeño solicitado en la práctica.
+    AdemÃ¡s deja estadÃ­sticas en problem.explorationStats para facilitar
+    el anÃ¡lisis de desempeÃ±o solicitado en la prÃ¡ctica.
     """
 
     start = problem.getStartState()
@@ -153,7 +175,7 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
         next_candidate = None
         while successors:
             succ_state, succ_action, _ = successors.pop(0)
-            # No pisar el objetivo durante exploración para evitar fin prematuro.
+            # No pisar el objetivo durante exploraciÃ³n para evitar fin prematuro.
             if problem.isGoalState(succ_state):
                 continue
             if succ_state not in visited:
@@ -168,7 +190,7 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
             stack.append([succ_state, list(problem.getSuccessors(succ_state))])
             continue
 
-        # Sin nuevos sucesores válidos: backtrack al padre.
+        # Sin nuevos sucesores vÃ¡lidos: backtrack al padre.
         stack.pop()
         if stack:
             parent_state = stack[-1][0]
@@ -181,7 +203,7 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
                 traversal_actions.append(reverse_action)
                 current_position = parent_state
 
-    # Al terminar la exploración, ir al objetivo desde posición actual.
+    # Al terminar la exploraciÃ³n, ir al objetivo desde posiciÃ³n actual.
     frontier = util.Queue()
     frontier.push((current_position, []))
     seen = {current_position}
@@ -200,7 +222,7 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
 
     actions = traversal_actions + path_to_goal
 
-    # Reconstruye estados recorridos para medir celdas únicas visitadas.
+    # Reconstruye estados recorridos para medir celdas Ãºnicas visitadas.
     state_cursor = start
     unique_path_cells = {start}
     for action in actions:
@@ -227,7 +249,7 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
 
 
 def exploration(problem):
-    "Compatibilidad con posibles referencias previas en inglés." 
+    "Compatibilidad con posibles referencias previas en inglÃ©s." 
     return exploracion(problem)
 
 # Abbreviations
@@ -236,3 +258,4 @@ dfs = depthFirstSearch
 astar = aStarSearch
 ucs = uniformCostSearch
 exp = exploracion
+

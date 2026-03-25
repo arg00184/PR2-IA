@@ -1,4 +1,4 @@
-# searchAgents.py
+﻿# searchAgents.py
 # ---------------
 # Licensing Information:  You are free to use or extend these projects for
 # educational purposes provided that (1) you do not distribute or publish
@@ -263,11 +263,14 @@ class StayWestSearchAgent(SearchAgent):
         self.searchType = lambda state: PositionSearchProblem(state, costFn)
         
         
-class MiAgente_DFS(SearchAgent):
+class MiAgente_Explorador_dfs(SearchAgent):
     def __init__(self):
         self.searchFunction = search.depthFirstSearch
         self.searchType = lambda state: PositionSearchProblem(state)
 
+
+class MiAgente_DFS(MiAgente_Explorador_dfs):
+    pass
 
 class MiAgente_Explorador(SearchAgent):
     def __init__(self):
@@ -561,3 +564,4 @@ def mazeDistance(point1: Tuple[int, int], point2: Tuple[int, int], gameState: pa
     assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
     prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False, visualize=False)
     return len(search.bfs(prob))
+
