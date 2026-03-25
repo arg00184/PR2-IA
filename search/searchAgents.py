@@ -278,6 +278,12 @@ class MiAgente_Explorador(SearchAgent):
         self.searchType = lambda state: PositionSearchProblem(state)
 
 
+class MiAgente_Explorador_bae(SearchAgent):
+    def __init__(self):
+        self.searchFunction = lambda problem: search.aStarSearch(problem, heuristic=manhattanHeuristic)
+        self.searchType = lambda state: PositionSearchProblem(state)
+
+
 def manhattanHeuristic(position, problem, info={}):
     "The Manhattan distance heuristic for a PositionSearchProblem"
     xy1 = position
