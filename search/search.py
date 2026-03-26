@@ -89,28 +89,29 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    start = problem.getStartState()
-    if problem.isGoalState(start):
+
+    inicio = problem.getStartState()
+    if problem.isGoalState(inicio):
         return []
 
-    frontier = util.Stack()
-    frontier.push((start, []))
-    visited = set()
+    frontera = util.Stack()
+    frontera.push((inicio, []))
+    visitados = set()
 
-    while not frontier.isEmpty():
-        state, path = frontier.pop()
+    while not frontera.isEmpty():
+        estado, camino = frontera.pop()
 
-        if state in visited:
+        if estado in visitados:
             continue
 
-        visited.add(state)
+        visitados.add(estado)
 
-        if problem.isGoalState(state):
-            return path
+        if problem.isGoalState(estado):
+            return camino
 
-        for successor, action, _ in reversed(problem.getSuccessors(state)):
-            if successor not in visited:
-                frontier.push((successor, path + [action]))
+        for sucesor, accion, _ in reversed(problem.getSuccessors(estado)):
+            if sucesor not in visitados:
+                frontera.push((sucesor, camino + [accion]))
 
     return []
 
@@ -133,46 +134,47 @@ def nullHeuristic(state, problem=None) -> float:
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
     """Search the node that has the lowest combined cost and heuristic first."""
-    start = problem.getStartState()
-    if problem.isGoalState(start):
+
+    inicio = problem.getStartState()
+    if problem.isGoalState(inicio):
         return []
 
-    frontier = util.PriorityQueue()
-    frontier.push((start, [], 0), heuristic(start, problem))
-    best_cost = {start: 0}
+    frontera = util.PriorityQueue()
+    frontera.push((inicio, [], 0), heuristic(inicio, problem))
+    mejor_coste = {inicio: 0}
 
-    while not frontier.isEmpty():
-        state, path, cost_so_far = frontier.pop()
+    while not frontera.isEmpty():
+        estado, camino, coste_actual = frontera.pop()
 
-        if cost_so_far > best_cost.get(state, float('inf')):
+        if coste_actual > mejor_coste.get(estado, float('inf')):
             continue
 
-        if problem.isGoalState(state):
-            return path
+        if problem.isGoalState(estado):
+            return camino
 
-        for successor, action, step_cost in problem.getSuccessors(state):
-            new_cost = cost_so_far + step_cost
-            if new_cost < best_cost.get(successor, float('inf')):
-                best_cost[successor] = new_cost
-                priority = new_cost + heuristic(successor, problem)
-                frontier.push((successor, path + [action], new_cost), priority)
+        for sucesor, accion, coste_paso in problem.getSuccessors(estado):
+            nuevo_coste = coste_actual + coste_paso
+            if nuevo_coste < mejor_coste.get(sucesor, float('inf')):
+                mejor_coste[sucesor] = nuevo_coste
+                prioridad = nuevo_coste + heuristic(sucesor, problem)
+                frontera.push((sucesor, camino + [accion], nuevo_coste), prioridad)
 
     return []
 
 
 def exploracion(problem: SearchProblem) -> List[Directions]:
     """
-    Recorre el mayor nÃºmero posible de celdas alcanzables evitando pisar
-    el objetivo durante la fase de exploraciÃ³n para no terminar la partida
+    Recorre el mayor numero posible de celdas alcanzables evitando pisar
+    el objetivo durante la fase de exploracion para no terminar la partida
     prematuramente.
 
     Estrategia:
       1) DFS iterativo para explorar celdas alcanzables NO objetivo.
-      2) Backtracking explÃ­cito para reconstruir una secuencia ejecutable.
-      3) Al terminar, BFS desde la posiciÃ³n actual hasta el objetivo.
+      2) Backtracking explicito para reconstruir una secuencia ejecutable.
+      3) Al terminar, BFS desde la posicion actual hasta el objetivo.
 
-    AdemÃ¡s deja estadÃ­sticas en problem.explorationStats para facilitar
-    el anÃ¡lisis de desempeÃ±o solicitado en la prÃ¡ctica.
+    Ademas deja estadisticas en problem.explorationStats para facilitar
+    el analisis
     """
 
     start = problem.getStartState()
@@ -198,7 +200,7 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
         next_candidate = None
         while successors:
             succ_state, succ_action, _ = successors.pop(0)
-            # No pisar el objetivo durante exploraciÃ³n para evitar fin prematuro.
+            # No pisar el objetivo durante la exploracion para evitar un final prematuro.
             if problem.isGoalState(succ_state):
                 continue
             if succ_state not in visited:
@@ -213,7 +215,7 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
             stack.append([succ_state, list(problem.getSuccessors(succ_state))])
             continue
 
-        # Sin nuevos sucesores vÃ¡lidos: backtrack al padre.
+        # Si no hay sucesores validos, se hace backtracking al padre.
         stack.pop()
         if stack:
             parent_state = stack[-1][0]
@@ -226,7 +228,7 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
                 traversal_actions.append(reverse_action)
                 current_position = parent_state
 
-    # Al terminar la exploraciÃ³n, ir al objetivo desde posiciÃ³n actual.
+    # Al terminar la exploracion, se busca el objetivo desde la posicion actual.
     frontier = util.Queue()
     frontier.push((current_position, []))
     seen = {current_position}
@@ -245,7 +247,7 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
 
     actions = traversal_actions + path_to_goal
 
-    # Reconstruye estados recorridos para medir celdas Ãºnicas visitadas.
+    # Reconstruye los estados recorridos para medir las celdas unicas visitadas.
     state_cursor = start
     unique_path_cells = {start}
     for action in actions:
@@ -270,10 +272,6 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
 
     return actions
 
-
-def exploration(problem):
-    "Compatibilidad con posibles referencias previas en inglÃ©s." 
-    return exploracion(problem)
 
 # Abbreviations
 bfs = breadthFirstSearch

@@ -104,27 +104,35 @@ class SearchAgent(Agent):
 
     def registerInitialState(self, state):
         """
-        This is the first time that the agent sees the layout of the game
-        board. Here, we choose a path to the goal. In this phase, the agent
-        should compute the path to the goal and store it in a local variable.
-        All of the work is done in this method!
+        Calcula la ruta inicial del agente y guarda las metricas asociadas.
 
-        state: a GameState object (pacman.py)
+        state: estado inicial del juego
         """
-        if self.searchFunction == None: raise Exception("No search function provided for SearchAgent")
-        starttime = time.time()
-        problem = self.searchType(state) # Makes a new search problem
-        self.actions  = self.searchFunction(problem) # Find a path
-        if self.actions == None:
+        if self.searchFunction is None:
+            raise Exception("No se ha proporcionado una funcion de busqueda para SearchAgent")
+        tiempo_inicio = time.time()
+        self.tiempo_inicio_ejecucion = tiempo_inicio
+        self.pasos_ejecutados = 0
+        problema = self.searchType(state)
+        self.actions = self.searchFunction(problema)
+        if self.actions is None:
             self.actions = []
-        totalCost = problem.getCostOfActions(self.actions)
-        print('Path found with total cost of %d in %.1f seconds' % (totalCost, time.time() - starttime))
-        if '_expanded' in dir(problem): print('Search nodes expanded: %d' % problem._expanded)
-        if hasattr(problem, 'explorationStats'):
-            stats = problem.explorationStats
-            print('Exploration steps: %d' % stats.get('steps', len(self.actions)))
-            print('Unique visited cells: %d' % stats.get('unique_cells', 0))
-            print('Repetition ratio (steps/unique): %.3f' % stats.get('repetition_ratio', 0.0))
+        coste_total = problema.getCostOfActions(self.actions)
+        self.coste_planificado = coste_total
+        self.nodos_expandidos_planificados = getattr(problema, '_expanded', None)
+        self.tiempo_planificacion = time.time() - tiempo_inicio
+        print('Camino encontrado con coste total de %d en %.4f segundos' % (coste_total, self.tiempo_planificacion))
+        if self.nodos_expandidos_planificados is not None:
+            print('Nodos de busqueda expandidos: %d' % self.nodos_expandidos_planificados)
+            self.indice_eficiencia_busqueda = 1000.0 / max(1, coste_total + self.nodos_expandidos_planificados)
+            print('Indice de eficiencia de busqueda (cuanto mas alto, mejor): %.3f' % self.indice_eficiencia_busqueda)
+        else:
+            self.indice_eficiencia_busqueda = None
+        if hasattr(problema, 'explorationStats'):
+            estadisticas = problema.explorationStats
+            print('Pasos de exploracion: %d' % estadisticas.get('steps', len(self.actions)))
+            print('Celdas unicas visitadas: %d' % estadisticas.get('unique_cells', 0))
+            print('Ratio de repeticion (pasos/unicas): %.3f' % estadisticas.get('repetition_ratio', 0.0))
 
     def getAction(self, state):
         """
@@ -134,13 +142,48 @@ class SearchAgent(Agent):
 
         state: a GameState object (pacman.py)
         """
-        if 'actionIndex' not in dir(self): self.actionIndex = 0
+        if 'actionIndex' not in dir(self):
+            self.actionIndex = 0
         i = self.actionIndex
         self.actionIndex += 1
         if i < len(self.actions):
-            return self.actions[i]
+            accion = self.actions[i]
+            if accion != Directions.STOP:
+                self.pasos_ejecutados += 1
+            return accion
         else:
             return Directions.STOP
+
+    def final(self, state):
+        """
+        Resume la ejecucion real al terminar la partida.
+
+        Muestra los pasos ejecutados, el tiempo real, el resultado final
+        y el indice de eficiencia durante la ejecucion.
+        """
+        tiempo_total = time.time() - self.tiempo_inicio_ejecucion if 'tiempo_inicio_ejecucion' in dir(self) else 0.0
+        if state.isWin():
+            resultado = 'gana'
+        elif state.isLose():
+            resultado = 'muere'
+        else:
+            resultado = 'termina'
+
+        indice_eficiencia_ejecucion = 0.0
+        if resultado == 'gana' and self.nodos_expandidos_planificados is not None:
+            indice_eficiencia_ejecucion = 1000.0 / max(1, self.pasos_ejecutados + self.nodos_expandidos_planificados)
+
+        print('Pasos ejecutados hasta el final: %d' % getattr(self, 'pasos_ejecutados', 0))
+        print('Tiempo real total: %.4f segundos' % tiempo_total)
+        print('Resultado final: %s' % resultado)
+        if (
+            self.nodos_expandidos_planificados is not None and
+            (
+                self.indice_eficiencia_busqueda is None or
+                abs(indice_eficiencia_ejecucion - self.indice_eficiencia_busqueda) > 1e-9
+            )
+        ):
+            print('Indice de eficiencia en ejecucion (cuanto mas alto, mejor): %.3f' % indice_eficiencia_ejecucion)
 
 class PositionSearchProblem(search.SearchProblem):
     """
@@ -164,12 +207,9 @@ class PositionSearchProblem(search.SearchProblem):
         self.walls = gameState.getWalls()
         self.startState = gameState.getPacmanPosition()
         if start != None: self.startState = start
-        print(f"OBJETIVO EN: {gameState.goal}")
-        self.goal = gameState.goal if gameState.goal is not None else (1,1)  # NUEVO: Usa el objetivo definido en el layout
-        print(f"OBJETIVO EN: {self.goal}")
+        self.goal = gameState.goal if gameState.goal is not None else (1,1)
         self.costFn = costFn
         self.visualize = visualize
-        print(gameState.getNumFood())
         if warn and (gameState.getNumFood() != 1 or not gameState.hasFood(*goal)):
             print('Warning: this does not look like a regular search maze')
 
@@ -264,21 +304,25 @@ class StayWestSearchAgent(SearchAgent):
         
         
 class MiAgente_Explorador_dfs(SearchAgent):
+    """Agente de busqueda en profundidad para la actividad DFS."""
     def __init__(self):
         self.searchFunction = search.depthFirstSearch
         self.searchType = lambda state: PositionSearchProblem(state)
 
 
 class MiAgente_DFS(MiAgente_Explorador_dfs):
+    """Alias compatible para reutilizar el agente DFS."""
     pass
 
 class MiAgente_Explorador(SearchAgent):
+    """Agente explorador definido en la actividad de exploracion."""
     def __init__(self):
         self.searchFunction = search.exploracion
         self.searchType = lambda state: PositionSearchProblem(state)
 
 
 class MiAgente_Explorador_bae(SearchAgent):
+    """Agente A* guiado por la heuristica Manhattan."""
     def __init__(self):
         self.searchFunction = lambda problem: search.aStarSearch(problem, heuristic=manhattanHeuristic)
         self.searchType = lambda state: PositionSearchProblem(state)
@@ -570,4 +614,3 @@ def mazeDistance(point1: Tuple[int, int], point2: Tuple[int, int], gameState: pa
     assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
     prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False, visualize=False)
     return len(search.bfs(prob))
-
