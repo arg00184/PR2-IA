@@ -177,9 +177,9 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
     el analisis
     """
 
-    start = problem.getStartState()
+    inicio = problem.getStartState()
 
-    if problem.isGoalState(start):
+    if problem.isGoalState(inicio):
         problem.explorationStats = {
             'steps': 0,
             'unique_cells': 1,
@@ -187,92 +187,90 @@ def exploracion(problem: SearchProblem) -> List[Directions]:
         }
         return []
 
-    visited = {start}
-    traversal_actions = []
-    current_position = start
+    visitados = {inicio}
+    acciones_recorrido = []
+    posicion_actual = inicio
 
     # Pila DFS: [estado, sucesores_restantes]
-    stack = [[start, list(problem.getSuccessors(start))]]
+    pila = [[inicio, list(problem.getSuccessors(inicio))]]
 
-    while stack:
-        current, successors = stack[-1]
+    while pila:
+        actual, sucesores = pila[-1]
 
-        next_candidate = None
-        while successors:
-            succ_state, succ_action, _ = successors.pop(0)
+        siguiente_candidato = None
+        while sucesores:
+            estado_sucesor, accion_sucesora, _ = sucesores.pop(0)
             # No pisar el objetivo durante la exploracion para evitar un final prematuro.
-            if problem.isGoalState(succ_state):
+            if problem.isGoalState(estado_sucesor):
                 continue
-            if succ_state not in visited:
-                next_candidate = (succ_state, succ_action)
+            if estado_sucesor not in visitados:
+                siguiente_candidato = (estado_sucesor, accion_sucesora)
                 break
 
-        if next_candidate is not None:
-            succ_state, succ_action = next_candidate
-            visited.add(succ_state)
-            traversal_actions.append(succ_action)
-            current_position = succ_state
-            stack.append([succ_state, list(problem.getSuccessors(succ_state))])
+        if siguiente_candidato is not None:
+            estado_sucesor, accion_sucesora = siguiente_candidato
+            visitados.add(estado_sucesor)
+            acciones_recorrido.append(accion_sucesora)
+            posicion_actual = estado_sucesor
+            pila.append([estado_sucesor, list(problem.getSuccessors(estado_sucesor))])
             continue
 
         # Si no hay sucesores validos, se hace backtracking al padre.
-        stack.pop()
-        if stack:
-            parent_state = stack[-1][0]
-            reverse_action = None
-            for s, a, _ in problem.getSuccessors(current):
-                if s == parent_state:
-                    reverse_action = a
+        pila.pop()
+        if pila:
+            estado_padre = pila[-1][0]
+            accion_retroceso = None
+            for sucesor, accion, _ in problem.getSuccessors(actual):
+                if sucesor == estado_padre:
+                    accion_retroceso = accion
                     break
-            if reverse_action is not None:
-                traversal_actions.append(reverse_action)
-                current_position = parent_state
+            if accion_retroceso is not None:
+                acciones_recorrido.append(accion_retroceso)
+                posicion_actual = estado_padre
 
     # Al terminar la exploracion, se busca el objetivo desde la posicion actual.
-    frontier = util.Queue()
-    frontier.push((current_position, []))
-    seen = {current_position}
+    frontera = util.Queue()
+    frontera.push((posicion_actual, []))
+    vistos = {posicion_actual}
 
-    path_to_goal = []
-    while not frontier.isEmpty():
-        state, path = frontier.pop()
-        if problem.isGoalState(state):
-            path_to_goal = path
+    camino_al_objetivo = []
+    while not frontera.isEmpty():
+        estado, camino = frontera.pop()
+        if problem.isGoalState(estado):
+            camino_al_objetivo = camino
             break
 
-        for succ_state, action, _ in problem.getSuccessors(state):
-            if succ_state not in seen:
-                seen.add(succ_state)
-                frontier.push((succ_state, path + [action]))
+        for estado_sucesor, accion, _ in problem.getSuccessors(estado):
+            if estado_sucesor not in vistos:
+                vistos.add(estado_sucesor)
+                frontera.push((estado_sucesor, camino + [accion]))
 
-    actions = traversal_actions + path_to_goal
+    acciones = acciones_recorrido + camino_al_objetivo
 
     # Reconstruye los estados recorridos para medir las celdas unicas visitadas.
-    state_cursor = start
-    unique_path_cells = {start}
-    for action in actions:
-        next_state = None
-        for succ_state, succ_action, _ in problem.getSuccessors(state_cursor):
-            if succ_action == action:
-                next_state = succ_state
+    cursor_estado = inicio
+    celdas_unicas_recorridas = {inicio}
+    for accion in acciones:
+        siguiente_estado = None
+        for estado_sucesor, accion_sucesora, _ in problem.getSuccessors(cursor_estado):
+            if accion_sucesora == accion:
+                siguiente_estado = estado_sucesor
                 break
-        if next_state is None:
+        if siguiente_estado is None:
             break
-        unique_path_cells.add(next_state)
-        state_cursor = next_state
+        celdas_unicas_recorridas.add(siguiente_estado)
+        cursor_estado = siguiente_estado
 
-    steps = len(actions)
-    unique_cells = len(unique_path_cells)
-    repetition_ratio = (float(steps) / unique_cells) if unique_cells > 0 else 0.0
+    pasos = len(acciones)
+    celdas_unicas = len(celdas_unicas_recorridas)
+    ratio_repeticion = (float(pasos) / celdas_unicas) if celdas_unicas > 0 else 0.0
     problem.explorationStats = {
-        'steps': steps,
-        'unique_cells': unique_cells,
-        'repetition_ratio': repetition_ratio,
+        'steps': pasos,
+        'unique_cells': celdas_unicas,
+        'repetition_ratio': ratio_repeticion,
     }
 
-    return actions
-
-
+    return acciones
 # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
